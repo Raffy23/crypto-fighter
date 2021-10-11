@@ -1,0 +1,50 @@
+<new-contract>
+
+  <div class="pure-g">
+    <div class="pure-u-1 pure-u-md-1-3"></div>
+    <div class="pure-u-1 pure-u-md-1-3">
+      <form class="pure-form pure-form-aligned">
+        <h2>Search for Crypto Fighter contract</h2>
+        <fieldset>
+          <div class="pure-control-group">
+            <label for="aligned-name">Contract Address</label>
+            <input type="text" id="aligned-name" placeholder="0x0000000000000000000000000000000000000000"/>
+            <span class="pure-form-message-inline">This is a required field.</span>
+          </div>
+          <div class="pure-controls">
+            <button type="submit" class="pure-button pure-button-primary" onclick={onClick}>Load Contract</button>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+    <div class="pure-u-1 pure-u-md-1-3"></div>
+  </div>
+
+  <script>
+    import {loadGameContract} from "./service";
+    import {showError} from "./lib";
+
+    export default {
+      observable: null,
+
+      onClick(e) {
+        e.preventDefault();
+        const address = this.$('#aligned-name').value
+
+        if (web3.isAddress(address)) {
+
+          try {
+            loadGameContract(address)
+            window.localStorage.setItem("game-contract", address)
+            this.props.observable.trigger('new-contract')
+          } catch(error) {
+            console.error(error)
+            showError("An error occurred while adding the Contract:\n\n" + error)
+          }
+
+        } else alert("Please enter a valid address")
+      }
+    }
+  </script>
+
+</new-contract>

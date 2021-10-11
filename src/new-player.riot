@@ -1,0 +1,65 @@
+<new-player>
+  <form class="pure-form pure-form-aligned">
+    <h2>It seems you haven't joined the game yet</h2>
+    <p>
+      Create a account to proceed and start fighting the <i>worst</i> pay to win crypto game on the
+      blockchain!
+    </p>
+    <fieldset>
+      <div class="pure-control-group">
+        <label>Game Contract:</label>
+        <span class="pure-form-message-inline">{ state.address }</span>
+      </div>
+      <b style="text-align:center;display:inline-block;width:100%" if={!state.canCreateAccount}>
+        It seems that currently no new accounts can be created!
+      </b>
+      <div class="pure-controls">
+        <button type="submit" class="pure-button pure-button-primary" disabled={!state.canCreateAccount}
+                onclick={onClick}>Create Account
+        </button>
+      </div>
+    </fieldset>
+  </form>
+
+  <script>
+    import {GameContractService} from "./service";
+    const game = new GameContractService()
+
+    export default {
+
+      state: {
+        address: '',
+        canCreateAccount: true,
+      },
+
+      observable: null,
+      contract: null,
+
+      onBeforeMount() {
+        this.state.address = window.localStorage.getItem("game-contract")
+        this.state.canCreateAccount = game.canCreateNewPlayers()
+
+        game.events.on('PlayerRegistrationStatus', this.onRegisterStatusChanged)
+      },
+
+      onRegisterStatusChanged(event) {
+        this.update({
+          canCreateAccount: event.value
+        })
+      },
+
+     onUnmounted() {
+        game.events.off('PlayerRegistrationStatus', this.onRegisterStatusChanged)
+     },
+
+      onClick(e) {
+        e.preventDefault()
+        game.createPlayer().then((tx) => {
+          console.log("Wait for Event or mined transaction!")
+          this.props.observable.trigger('new-player')
+        })
+      }
+    }
+  </script>
+
+</new-player>

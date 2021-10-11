@@ -1,0 +1,99 @@
+<view-inventory>
+
+  <h3>Inventory:<small style="padding-left:1em">({state.filled}/{state.items.length})</small></h3>
+  <div class="pure-g">
+    <div class="pure-u-1-6 inventory-slot" each={(item, index) in state.items} onclick={equip(index)} oncontextmenu={deleteItem(index)}>{itemName(item)}</div>
+  </div>
+  <small><i>Note:</i> Right-click on a item slot deletes the item!</small>
+  <br/>
+
+  <script>
+    import {GameContractService} from "./service";
+    const game = new GameContractService()
+
+    export default {
+      state: {},
+
+      itemName(item) {
+        const itemID = item.toNumber()
+        if (itemID === 0) return "Empty"
+
+        return game.getItemName(item)
+      },
+
+      onBeforeMount() {
+        const items  = game.getInventory()
+        const filled = items.filter(item => item.toNumber() > 0).length
+
+        this.state = {
+          filled: filled,
+          items: items
+        }
+      },
+
+      onItemBoughtEvent(item) {
+        const slot = item.slot.toNumber()
+
+        if (!this.state.items[slot].eq(item.item)) {
+          this.state.items[slot] = item.item
+
+          this.update({
+            items: this.state.items,
+            filled: this.state.filled + 1
+          })
+        }
+
+      },
+
+      onMounted() {
+        game.events.on('ItemBought', this.onItemBoughtEvent)
+      },
+
+      onBeforeUnmount() {
+        game.events.off('ItemBought', this.onItemBoughtEvent)
+      },
+
+      equip(index) {
+        return (event) => {
+          event.preventDefault()
+          game.equipItem(index).then((tx) => {
+            this.props.observable.trigger('InventoryChanged')
+            const items  = game.getInventory()
+            const filled = items.filter(item => item.toNumber() > 0).length
+
+            this.update({
+              items: items,
+              filled: filled
+            })
+          })
+        }
+      },
+
+      deleteItem(index) {
+        return (event) => {
+          event.preventDefault()
+          game.trashItem(index).then((tx) => {
+            this.props.observable.trigger('InventoryChanged')
+            const items  = game.getInventory()
+            const filled = items.filter(item => item.toNumber() > 0).length
+
+            this.update({
+              items: items,
+              filled: filled
+            })
+          })
+        }
+      }
+    }
+  </script>
+
+  <style>
+    .inventory-slot {
+      padding: .5em 1em;
+      border: 1px white solid;
+      color: #333;
+      background-color: #EFEFEF;
+    }
+  </style>
+
+</view-inventory>

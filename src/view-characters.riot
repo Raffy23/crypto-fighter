@@ -1,0 +1,124 @@
+<view-character>
+  <h3>Other Players:</h3>
+  <div class="pure-g pure-form" style="padding-bottom:2em">
+    <div class="pure-u-1 pure-u-md-1-1"><b>Add another player:</b></div>
+    <div class="pure-u-1 pure-u-md-2-3" style="padding-right:1.5em">
+      <input type="text" id=add-player-address" style="width:100%" placeholder="0x0000000000000000000000000000000000000000"/>
+    </div>
+    <div class="pure-u-1 pure-u-md-1-3" style="padding-right:1.5em">
+      <button class="pure-button" style="width:100%;" onclick={onAddPlayer}>Add Player</button>
+    </div>
+  </div>
+
+  <div if={state.players.length==0}>
+    <p>It seems that there are no other players here, have you tried to search or add some?</p>
+  </div>
+
+  <div class="pure-g" style="border-bottom:1px #999 solid;margin-bottom:1em;padding-bottom:0.5em" each="{(player, index) in state.players}">
+    <div class="pure-u-1 pure-u-md-1-1"><b>{player.id}</b></div>
+    <div class="pure-u-1 pure-u-md-1-3">Attack: {player.attack.toString()}</div>
+    <div class="pure-u-1 pure-u-md-1-3">Defense: {player.defense.toString()}</div>
+    <div class="pure-u-1 pure-u-md-1-3">Health: {player.health.toString()}</div>
+    <div class="pure-u-1 pure-u-md-1-1" style="display:flex;justify-content:flex-end;padding-top:0.55em">
+      <button class="pure-button" style="margin-right:0.5em" onclick={onAttack(player)}>Attack</button>
+      <button class="pure-button" style="margin-right:0.5em" onclick={onRefresh(index)}>Refresh</button>
+      <button class="pure-button" style="background:rgb(223, 117, 20);margin-right:0.5em" onclick={onDelete(index)}>Delete</button>
+    </div>
+  </div>
+
+  <div class="pure-g" style="padding-bottom:2em">
+    <div class="pure-g pure-u-1 pure-u-md-1-1">
+      <div class="pure-u-1 pure-u-md-1-1" style="display:flex;justify-content:center;align-content:center">
+        <button class="pure-button" onclick={onSearchMore}>Search for other players ...</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import {GameContractService} from "./service";
+    import {showError} from "./lib";
+
+    const game = new GameContractService()
+    let maxBlocks = 0
+
+    export default {
+      owner: "",
+      state: {
+        players: []
+      },
+
+      onBeforeMount() {
+        this.state.players = game.knownPlayers.filter(address => address !== game.self()).map(address => game.getPlayerStats(address))
+        game.events.on('PlayerSpawned', this.onPlayerSpawn)
+      },
+
+      onPlayerSpawn(event) {
+        this.state.players.push(game.getPlayerStats(event.from))
+        this.update()
+      },
+
+      onBeforeUnmount() {
+        game.events.off('PlayerSpawned', this.onPlayerSpawn)
+      },
+
+      onDelete(index) {
+        return (event) => {
+          this.state.players.splice(index, 1)
+          this.update()
+        }
+      },
+
+      onAttack(player) {
+        return (event) => {
+          event.preventDefault()
+          game.attack(player.id).then((tx) => {
+            this.props.observable.trigger('APConsumed')
+          })
+        }
+      },
+
+      onRefresh(index) {
+        return (event) => {
+          this.state.players[index].attack = game.getPlayerStats(this.state.players[index].id)
+          this.update({
+            players: this.state.players
+          })
+        }
+      },
+
+      onAddPlayer(event) {
+        const address = this.$('#add-player-address').value
+        if (!web3.isAddress(address)) {
+          alert("Not a valid address!")
+          return
+        }
+
+        try {
+          this.state.players.push(game.getPlayerStats(address))
+          this.update()
+        } catch(error) {
+          console.error(error)
+          showError(error)
+        }
+      },
+
+      onSearchMore(event) {
+        event.preventDefault()
+        const excludes = this.state.players.map((value) => value.id)
+        excludes.push(game.self())
+
+        maxBlocks = maxBlocks + 100
+        game.searchForPlayers(maxBlocks, excludes).then((set) => {
+          set.forEach((address) => {
+            this.state.players.push(game.getPlayerStats(address))
+          })
+
+          this.update()
+        }).catch(error => showError(error))
+      }
+
+    }
+  </script>
+
+
+</view-character>

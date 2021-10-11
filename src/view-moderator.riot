@@ -1,0 +1,31 @@
+<view-moderator>
+  <h3 style="margin-bottom:0">Moderator Dashboard</h3>
+  <br/>
+  <button type="submit" class="pure-button pure-button-primary" onclick={renounceModerator}>Renounce Moderator</button>
+  <br/>
+  <br/>
+  <view-create-item></view-create-item>
+
+  <script>
+    import ViewCreateItem from "./view-create-item.riot"
+
+    import {GameContractService} from "./service";
+    const game = new GameContractService()
+
+    export default {
+      state: {},
+
+      components: {
+        ViewCreateItem
+      },
+
+      renounceModerator(event) {
+        event.preventDefault()
+        game.renounceModerator().then((tx) => {
+          this.props.observable.trigger('permissions-changed')
+        })
+      }
+
+    }
+  </script>
+</view-moderator>

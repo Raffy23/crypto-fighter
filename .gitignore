@@ -1,0 +1,10 @@
+# Ignore build related files
+build/
+ganache/
+
+# Ignore static files
+public/web3.min.js
+
+# Project files
+*.iml
+package-lock.json

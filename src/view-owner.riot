@@ -1,0 +1,285 @@
+<view-owner>
+  <h3 style="margin-bottom:0">Owner Dashboard</h3>
+  <div>
+    <div class="pure-menu pure-menu-horizontal" style="background-color:#EFEFEF;border-bottom:1px #AAA solid;">
+      <ul class="pure-menu-list">
+        <li class="pure-menu-item pure-menu-selected">
+          <a href="#" class="pure-menu-link" onclick={showView('overview')}>Overview</a>
+        </li>
+        <li class="pure-menu-item pure-menu-selected">
+          <a href="#" class="pure-menu-link" onclick={showView('token')}>Token</a>
+        </li>
+        <li class="pure-menu-item pure-menu-selected">
+          <a href="#" class="pure-menu-link" onclick={showView('items')}>Items</a>
+        </li>
+        <li class="pure-menu-item pure-menu-selected pure-menu-has-children pure-menu-allow-hover">
+          <a href="#" id="menuLink1" class="pure-menu-link pure-menu-selected">Role Management</a>
+          <ul class="pure-menu-children" style="width:100%;background-color:#EFEFEF;border:1px #AAA solid">
+            <li class="pure-menu-item pure-menu-selected">
+              <a href="#" class="pure-menu-link" onclick={showView('manageOwners')}>Owner</a>
+            </li>
+            <li class="pure-menu-item pure-menu-selected">
+              <a href="#" class="pure-menu-link" onclick={showView('manageMods')}>Moderator</a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+    <div if={state.view.overview}>
+      <p>This is the Owner Dashboard, all administrative stuff can be done here:</p>
+      <div>
+        <input type="checkbox" id="allow-new-players" onclick={checkAllowNewPlayers} checked={state.allowNewPlayers}>
+        <label style="margin-left:0.50em" for="allow-new-players">Allow new players to register</label>
+      </div>
+      <br/>
+      <div>
+        <b>Current balance: </b><span>{state.balance} Wei</span><br/>
+        <button type="submit" class="pure-button pure-button-primary" onclick={payout}>Payout</button>
+      </div>
+      <br/>
+      <b>New player starting Equipment:</b>
+      <form class="pure-form pure-form-aligned">
+        <fieldset>
+          <div class="pure-control-group">
+            <label for="aligned-head">Head</label>
+            <input type="number" id="aligned-head" placeholder="0" value={state.template.head}/>
+          </div>
+          <div class="pure-control-group">
+            <label for="aligned-chest">Chest</label>
+            <input type="number" id="aligned-chest" placeholder="0" value={state.template.chest}/>
+          </div>
+          <div class="pure-control-group">
+            <label for="aligned-arms">Arms</label>
+            <input type="number" id="aligned-arms" placeholder="0" value={state.template.arms}/>
+          </div>
+          <div class="pure-control-group">
+            <label for="aligned-pants">Pants</label>
+            <input type="number" id="aligned-pants" placeholder="0" value={state.template.pants}/>
+          </div>
+          <div class="pure-control-group">
+            <label for="aligned-shoes">Shoes</label>
+            <input type="number" id="aligned-shoes" placeholder="0" value={state.template.shoes}/>
+          </div>
+          <div class="pure-controls">
+            <button type="submit" class="pure-button pure-button-primary" onclick={setPlayerStartingGear}>
+              Submit
+            </button>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+    <div if={state.view.token}>
+      <b>Token details: ({state.token.name})</b><br/>
+      Address: {state.token.address}<br/>
+      <form class="pure-form">
+        <fieldset>
+          <div class="pure-g">
+            <div class="pure-u-2-3">Total supply</div><div class="pure-u-1-3">{state.token.amount}</div>
+            <div class="pure-u-2-3">Game balance</div><div class="pure-u-1-3">{state.token.game}</div>
+            <div class="pure-u-2-3" style="padding-right:1em"><input type="number" id="mint-tokens" disabled={!state.token.canMint} placeholder="0"/></div>
+            <div class="pure-u-1-3"><button type="submit" class="pure-button pure-button-primary" disabled={!state.token.canMint} onclick={mint}>Mint</button></div>
+          </div>
+        </fieldset>
+        <br/>
+      </form>
+      <b>Token price: </b>
+      <form class="pure-form">
+        <fieldset>
+          <div class="pure-g">
+            <div class="pure-u-1-2" style="padding-right:1em"><input style="max-width:75%" type="number" id="owner-token-price" placeholder="0" value={state.token.price}/> Wei</div>
+            <div class="pure-u-1-2"><button type="submit" class="pure-button pure-button-primary" onclick={setPrice}>Change token<br/>price</button></div>
+          </div>
+        </fieldset>
+      </form>
+    </div>
+    <view-create-item if={state.view.items}></view-create-item>
+    <div if={state.view.manageOwners}>
+      <b>Add Owner:</b>
+      <form class="pure-form">
+        <fieldset>
+          <div class="pure-g">
+            <div class="pure-u-2-3" style="padding-right:1em"><input style="width:100%" id="new-owner-address" placeholder="0x0000000000000000000000000000000000000000"/></div>
+            <div class="pure-u-1-3"><button type="submit" class="pure-button pure-button-primary" onclick={addOwner}>Add Owner</button></div>
+          </div>
+        </fieldset>
+      </form>
+      <button type="submit" class="pure-button pure-button-primary" onclick={renounceOwner}>Renounce Owner</button>
+    </div>
+    <div if={state.view.manageMods}>
+      <b>Add Moderator:</b>
+      <form class="pure-form">
+        <fieldset>
+          <div class="pure-g">
+            <div class="pure-u-2-3" style="padding-right:1em"><input style="width:100%" id="new-mod-address" placeholder="0x0000000000000000000000000000000000000000"/></div>
+            <div class="pure-u-1-3"><button type="submit" class="pure-button pure-button-primary" onclick={addModerator}>Add Moderator</button></div>
+          </div>
+        </fieldset>
+      </form>
+      <br/>
+      <b>Fire Moderator:</b>
+      <form class="pure-form">
+        <fieldset>
+          <div class="pure-g">
+            <div class="pure-u-2-3" style="padding-right:1em"><input style="width:100%" id="old-mod-address" placeholder="0x0000000000000000000000000000000000000000"/></div>
+            <div class="pure-u-1-3"><button type="submit" class="pure-button pure-button-primary" onclick={fireModerator}>Fire Moderator</button></div>
+          </div>
+        </fieldset>
+      </form>
+      <div if={state.isMod}>
+        <button type="submit" class="pure-button pure-button-primary" onclick={renounceModerator}>Renounce Moderator</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import ViewCreateItem from "./view-create-item.riot"
+
+    import {GameContractService} from "./service";
+    const game = new GameContractService()
+
+    export default {
+      state: {},
+
+      components: {
+        ViewCreateItem
+      },
+
+      onBeforeMount() {
+        this.state = {
+          allowNewPlayers: game.canCreateNewPlayers(),
+          view: {overview: true},
+          balance: web3.eth.getBalance(game.gameAddress()),
+          isMode: game.isModerator(),
+          token: {
+            name: game.tokenName(),
+            amount: game.tokenSupply(),
+            canMint: game.canMintToken(game.self()),
+            game: game.tokenBalanceOfGame(),
+            price: game.tokenPrice(),
+            address: game.tokenContractAddress()
+          },
+          template: {
+            head: game.getNewPlayerArmorHead(),
+            arms: game.getNewPlayerArmorArms(),
+            chest: game.getNewPlayerArmorChest(),
+            pants: game.getNewPlayerArmorPants(),
+            shoes: game.getNewPlayerArmorShoes()
+          }
+        }
+      },
+
+      showView(view) {
+        return (event) => {
+          event.preventDefault();
+          this.update({
+            view: {
+              [view]: true
+            }
+          })
+        }
+      },
+
+      setPlayerStartingGear(event) {
+        event.preventDefault()
+        const head = this.$('#aligned-head').value
+        const chest = this.$('#aligned-chest').value
+        const arms = this.$('#aligned-arms').value
+        const pants = this.$('#aligned-pants').value
+        const shoes = this.$('#aligned-shoes').value
+
+        game.setPlayerTemplate(head, chest, arms, pants, shoes).then((tx) => {
+          this.update({
+            template: {
+              head: game.getNewPlayerArmorHead(),
+              arms: game.getNewPlayerArmorArms(),
+              chest: game.getNewPlayerArmorChest(),
+              pants: game.getNewPlayerArmorPants(),
+              shoes: game.getNewPlayerArmorShoes()
+            }
+          })
+        })
+      },
+
+      mint(event) {
+        event.preventDefault()
+        game.mintTokens(this.$('#mint-tokens').value)
+      },
+
+      setPrice(event) {
+        event.preventDefault()
+        game.setTokenPrice(this.$('#owner-token-price').value)
+      },
+
+      checkAllowNewPlayers(event) {
+        event.preventDefault()
+
+        game.setCreatePlayers(event.target.checked).then((tx) => {
+          this.update({
+            allowNewPlayers: game.canCreateNewPlayers()
+          })
+        })
+      },
+
+      addOwner(event) {
+        event.preventDefault()
+        game.addOwner(this.$("#new-owner-address").value)
+      },
+
+      renounceOwner(event) {
+        event.preventDefault()
+        game.renounceOwner().then((tx) => {
+          this.props.observable.trigger('permissions-changed')
+          this.update({
+            isMod: game.isModerator()
+          })
+        })
+      },
+
+      addModerator(event) {
+        event.preventDefault()
+        game.addModerator(this.$("#new-mod-address").value).then((tx) => {
+          this.props.observable.trigger('permissions-changed')
+          this.update({
+            isMod: game.isModerator()
+          })
+        })
+      },
+
+      fireModerator(event) {
+        event.preventDefault()
+        game.fireModerator(this.$("#old-mod-address").value).then((tx) => {
+          this.update({
+            isMod: game.isModerator()
+          })
+        })
+      },
+
+      renounceModerator(event) {
+        event.preventDefault()
+        game.renounceModerator().then((tx) => {
+          this.props.observable.trigger('permissions-changed')
+        })
+      },
+
+      payout(event) {
+        event.preventDefault()
+        game.payout(game.self(), web3.eth.getBalance(game.gameAddress())).then((tx) => {
+          this.update({
+            balance: web3.eth.getBalance(game.gameAddress())
+          })
+        })
+      }
+    }
+  </script>
+  <style>
+    .pure-control-group label {
+      vertical-align: super!important;
+    }
+    .pure-control-group input {
+      width: initial!important;
+    }
+    table {
+      color: #333;
+    }
+  </style>
+</view-owner>

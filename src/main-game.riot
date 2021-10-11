@@ -1,0 +1,96 @@
+<main-game>
+
+  <div class="pure-g">
+    <div class="pure-u-1 pure-u-md-1-3" style="padding-right:1em">
+      <view-owner observable={events} if={state.isOwner}></view-owner>
+      <view-moderator observable={events} if={state.isModerator && !state.isOwner}></view-moderator>
+      <view-shop tokens={state.tokenContractInstance} if={state.view.game && !(state.isOwner || state.isModerator)}></view-shop>
+    </div>
+    <div class="pure-u-1 pure-u-md-1-3" style="padding-left:0.5em;padding-right:0.5em">
+      <new-player observable={events} if={state.view.newPlayer}></new-player>
+      <view-character observable={events} if={state.view.game}></view-character>
+      <view-characters observable={events} if={state.view.game}></view-characters>
+    </div>
+    <div class="pure-u-1 pure-u-md-1-3" style="padding-left:1em">
+      <view-inventory observable={events} if={state.view.game}></view-inventory>
+      <view-shop tokens={state.tokenContractInstance} if={state.view.game && state.isOwner}></view-shop>
+    </div>
+  </div>
+
+  <script>
+    import {showError} from "./lib";
+    import observable from '@riotjs/observable'
+    import {GameContractService} from "./service";
+
+    import NewPlayer from './new-player.riot'
+    import ViewOwner from './view-owner.riot'
+    import ViewCharacter from './view-character.riot'
+    import ViewInventory from './view-inventory.riot'
+    import ViewShop from './view-shop.riot'
+    import ViewCharacters from './view-characters.riot'
+    import ViewModerator from './view-moderator.riot'
+
+    const gameContractService = new GameContractService()
+
+    export default {
+      events: observable(),
+      state: {
+        view: {},
+        isOwner: false,
+        isModerator: false
+      },
+
+      components: {
+        NewPlayer, ViewOwner, ViewCharacter, ViewInventory, ViewShop, ViewCharacters,
+        ViewModerator
+      },
+
+      hasAccount() {
+        return gameContractService.isPlayer()
+      },
+
+      onBeforeMount() {
+        this.state.isOwner = gameContractService.isOwner()
+        this.state.isModerator = gameContractService.isModerator()
+
+        if (!this.hasAccount()) this.state.view = {newPlayer: true}
+        else                    this.state.view = {game: true}
+
+        gameContractService.events.on('player-changed', (newPlayer) => {
+          this.state.isOwner = gameContractService.isOwner()
+          this.state.isModerator = gameContractService.isModerator()
+
+          if (!this.hasAccount()) this.update({view: {newPlayer:  true}})
+          else {
+            this.update({view: {invalid: true}})
+            this.update({view: {game: true}})
+          }
+        })
+
+        gameContractService.events.on('FightWon', (event) => { showError('Won a fight against: ' + event.attacker) })
+        gameContractService.events.on('FightLost', (event) => { showError('Lost a fight against: ' + event.attacker) })
+        this.events.on('permissions-changed', this.onPermissionsChanged)
+      },
+
+      onPermissionsChanged(event) {
+        this.update({
+          isOwner: gameContractService.isOwner(),
+          isModerator: gameContractService.isModerator()
+        })
+      },
+
+      onMounted() {
+        this.events.on('new-player', () => {
+          this.update({
+            view: {game: true}
+          })
+        })
+      }
+    }
+
+
+  </script>
+
+
+
+</main-game>

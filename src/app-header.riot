@@ -1,0 +1,44 @@
+<app-header>
+  <header class="header">
+    <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
+      <a class="pure-menu-heading">Crypto Fighter</a><small style="color:#7f8c8d">({state.gameAddress})</small>
+      <ul class="pure-menu-list">
+        <li class="pure-menu-item" style="padding: .5em 1em">
+          <label for="accounts" style="color:#AAA;padding-right:1em">Your Accounts:</label>
+          <select id="accounts" onchange={onAccountChanged}>
+            <option each={account in state.accounts} value={account} selected={account==state.active}>{account}</option>
+          </select>
+        </li>
+      </ul>
+    </div>
+  </header>
+
+  <script>
+    import {GameContractService} from "./service";
+    const game = new GameContractService()
+
+    export default {
+      state: {
+        gameAddress: window.localStorage.getItem("game-contract"),
+        accounts: "",
+        active: ""
+      },
+
+      onAccountChanged(event) {
+        this.props.observable.trigger('account-changed', event.target.value)
+        game.changeSelf(event.target.value)
+      },
+
+      onBeforeMount() {
+        this.state.active = web3.eth.defaultAccount
+        this.state.accounts = web3.eth.accounts
+
+        this.props.observable.on('new-contract', () => {
+          this.update({
+            gameAddress: window.localStorage.getItem("game-contract")
+          })
+        })
+      },
+    }
+  </script>
+</app-header>

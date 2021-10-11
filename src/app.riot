@@ -1,0 +1,60 @@
+<app>
+  <app-header gameContract={state.gameContract} observable={events}></app-header>
+
+  <div class="content-wrapper">
+    <div class="content">
+      <div id="root">
+        <new-contract observable={events} if={ !state.hasGameContractAddress }></new-contract>
+        <main-game if={ state.hasGameContractAddress }></main-game>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import observable from '@riotjs/observable'
+    import {loadGameContract} from "./service";
+
+    import AppHeader from './app-header.riot'
+    import NewContract from './new-contract.riot'
+    import MainGame from './main-game.riot'
+
+
+    export default {
+      state: {
+        hasGameContractAddress: false,
+        gameContract: "",
+      },
+
+      components: {
+        AppHeader, NewContract, MainGame
+      },
+
+      events: observable(),
+
+      hasGameContractAddress() {
+        return window.localStorage.getItem("game-contract") !== null
+      },
+
+      onBeforeMount() {
+        this.state.selectedAccount = web3.eth.defaultAccount
+        this.state.hasGameContractAddress = this.hasGameContractAddress()
+
+        if (this.hasGameContractAddress()) {
+          this.state.gameContract = window.localStorage.getItem("game-contract")
+          try {
+            loadGameContract()
+          } catch(error) {
+            console.error(error)
+            alert(error)
+          }
+        }
+
+        this.events.on('new-contract', () => {
+          this.update({
+            hasGameContractAddress: true,
+          })
+        })
+      },
+    }
+  </script>
+</app>
